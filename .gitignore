@@ -1,0 +1,24 @@
+## General
+.svn
+.cvs
+*.swp
+*~
+
+## Java
+*.class
+
+## System files
+.DS_Store
+Icon?
+._*
+Thumbs.db
+*.lock
+
+## Eclipse
+.classpath
+.project
+.settings
+
+## Maven
+*target/
+
