@@ -20,8 +20,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.onesite.common.util.json.JsonUtil;
-import com.onesite.sdk.client.HttpStatus;
+import com.onesite.commons.net.http.rest.client.HttpStatus;
 import com.onesite.sdk.client.OnesiteClient;
 import com.onesite.sdk.client.OnesiteException;
 import com.onesite.sdk.client.OnesiteResultCode;
@@ -38,7 +37,7 @@ public class ApiMethod
 	}
 
 	/**
-	 * Call the API via the OnesiteClient and return back the results. A OnesiteException 
+	 * Call the API via the OnesiteClient and return back the results. A OnesiteException
 	 * will be returned if an error occurs with a set OnesiteResultCode.
 	 * 
 	 * @param path
@@ -55,25 +54,21 @@ public class ApiMethod
 			log.error("Error occurred during client call to " + path);
 			throw e;
 		}
-		
-		String result = null;
 
-		if (this.client.getStatusCode() == HttpStatus.SC_OK) {
-			result = this.client.getResult();
+		if (this.client.getHttpStatusCode() == HttpStatus.SC_OK) {
 
 			try {
-				int code = JsonUtil.getIntValueFromPath("code", result);
-				if (code == OnesiteResultCode.OK) {
-					return result;
+				if (this.client.getResultCode() == OnesiteResultCode.OK) {
+					return this.client.getResult();
 				} else {
-					throw new OnesiteException(code, JsonUtil.getStringValueFromPath("message", result));
+					throw new OnesiteException(this.client.getResultCode(), this.client.getResultMessage());
 				}
 			} catch (Exception e) {
 				log.error("Error occurred while processing requested result code for " + path);
 				throw e;
 			}
 		}
-		
-		throw new OnesiteException(this.client.getStatusCode(), this.client.getStatusMessage());
+
+		throw new OnesiteException(this.client.getHttpStatusCode(), this.client.getHttpStatusMessage());
 	}
 }

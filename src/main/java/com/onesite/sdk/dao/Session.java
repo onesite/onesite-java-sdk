@@ -15,46 +15,83 @@
  */
 package com.onesite.sdk.dao;
 
-import java.util.Date;
-import java.util.Map;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.annotate.JsonProperty;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Session
 {
-	private String coreU;
-	private String coreX;
-	private String accessToken;
+	// Default session expiration time of 2 weeks
+	public static final int DefaultSessionExpiresTime = 60 * 60 * 24 * 7 * 2;
 
-	private Map<String, String> sessionData;
+	@JsonProperty("CoreU")
+	private String coreU = new String();
 
-	private String sessionStatus;
-	
-	private String ip;	
-	private String agent;
-	private Date expiresTime;
-	
-	private User user;
+	@JsonProperty("CoreX")
+	private String coreX = new String();
+
+	@JsonProperty("AccessToken")
+	private String accessToken = new String();
+
+	@JsonProperty("Data")
+	private SessionData sessionData = new SessionData();
+
+	@JsonProperty("State")
+	private String status = new String();
+
+	@JsonProperty("RemoteIP")
+	private String ip = new String();
+
+	@JsonProperty("Agent")
+	private String agent = new String();
+
+	@JsonProperty("Expires")
+	private long expiresTime = Session.DefaultSessionExpiresTime;
+
+	@JsonProperty("User")
+	private User user = new User();
 
 	public Session()
 	{
 
 	}
 
-	public Session(String coreU, String coreX)
+	public Session(String ip, String agent)
 	{
-		this.setCoreU(coreU);
-		this.setCoreX(coreX);
+		this.setIp(ip);
+		this.setAgent(agent);
 	}
 
-	public Session(String coreU, String coreX, User user)
+	public Session(User user, String ip, String agent)
+	{
+		this.setUser(user);
+		this.setIp(ip);
+		this.setAgent(agent);
+	}
+
+	public Session(String coreU, String coreX, String ip, String agent)
 	{
 		this.setCoreU(coreU);
 		this.setCoreX(coreX);
-		this.setUser(user);
+		this.setIp(ip);
+		this.setAgent(agent);
 	}
-	
-	public Session(String accessToken)
+
+	public Session(User user, String coreU, String coreX, String ip, String agent)
 	{
+		this.setUser(user);
+		this.setCoreU(coreU);
+		this.setCoreX(coreX);
+		this.setIp(ip);
+		this.setAgent(agent);
+	}
+
+	public Session(User user, String accessToken, String ip, String agent)
+	{
+		this.setUser(user);
 		this.setAccessToken(accessToken);
+		this.setIp(ip);
+		this.setAgent(agent);
 	}
 
 	public String getCoreU()
@@ -77,12 +114,12 @@ public class Session
 		this.coreX = coreX;
 	}
 
-	public Map<String, String> getSessionData()
+	public SessionData getSessionData()
 	{
 		return sessionData;
 	}
 
-	public void setSessionData(Map<String, String> sessionData)
+	public void setSessionData(SessionData sessionData)
 	{
 		this.sessionData = sessionData;
 	}
@@ -109,12 +146,12 @@ public class Session
 
 	public String getSessionStatus()
 	{
-		return sessionStatus;
+		return status;
 	}
 
 	public void setSessionStatus(String sessionStatus)
 	{
-		this.sessionStatus = sessionStatus;
+		this.status = sessionStatus;
 	}
 
 	public String getIp()
@@ -137,12 +174,12 @@ public class Session
 		this.agent = agent;
 	}
 
-	public Date getExpiresTime()
+	public long getExpiresTime()
 	{
 		return expiresTime;
 	}
-	
-	public void setExpiresTime(Date expireTime)
+
+	public void setExpiresTime(long expireTime)
 	{
 		this.expiresTime = expireTime;
 	}
@@ -156,5 +193,4 @@ public class Session
 	{
 		this.user = user;
 	}
-
 }

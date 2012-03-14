@@ -15,10 +15,19 @@
  */
 package com.onesite.sdk.dao;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.annotate.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class ExternalAccount
-{
+{	
+	@JsonProperty("ProviderName")
 	private String providerName;
+	
+	@JsonProperty("UserIdentifier")
 	private String userIdentifier;
+	
+	@JsonProperty("AccessToken")
 	private String accessToken;
 
 	public ExternalAccount()

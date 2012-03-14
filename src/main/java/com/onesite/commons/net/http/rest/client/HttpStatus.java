@@ -13,45 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.onesite.sdk.dao;
+package com.onesite.commons.net.http.rest.client;
 
-public class Password
+/**
+ * Constants enumerating the HTTP status codes.
+ * 
+ * @see org.apache.http.HttpStatus
+ *
+ */
+public class HttpStatus implements org.apache.http.HttpStatus
 {
-	private String password;
-	private Boolean encoded = false;
-	
-	public Password()
-	{	
-	}
-	
-	public Password(String password)
-	{
-		this.setPassword(password);
-	}
-	
-	public Password(String password, boolean encoded)
-	{
-		this.setPassword(password);
-		this.setEncoded(encoded);
-	}
 
-	public String getPassword()
-	{
-		return password;
-	}
-
-	public void setPassword(String password)
-	{
-		this.password = password;
-	}
-
-	public Boolean isEncoded()
-	{
-		return encoded;
-	}
-
-	public void setEncoded(Boolean encoded)
-	{
-		this.encoded = encoded;
-	}
 }

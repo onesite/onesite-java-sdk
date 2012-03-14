@@ -15,43 +15,21 @@
  */
 package com.onesite.sdk.dao;
 
-public class Password
+import java.util.HashMap;
+
+import org.codehaus.jackson.map.ObjectMapper;
+
+public class SessionData extends HashMap<String, String>
 {
-	private String password;
-	private Boolean encoded = false;
-	
-	public Password()
-	{	
-	}
-	
-	public Password(String password)
+	@Override
+	public String toString()
 	{
-		this.setPassword(password);
-	}
-	
-	public Password(String password, boolean encoded)
-	{
-		this.setPassword(password);
-		this.setEncoded(encoded);
-	}
-
-	public String getPassword()
-	{
-		return password;
-	}
-
-	public void setPassword(String password)
-	{
-		this.password = password;
-	}
-
-	public Boolean isEncoded()
-	{
-		return encoded;
-	}
-
-	public void setEncoded(Boolean encoded)
-	{
-		this.encoded = encoded;
+		ObjectMapper mapper = new ObjectMapper();
+		
+		try {
+			return mapper.writeValueAsString(this);
+		} catch (Exception e) {
+			return null;
+		}
 	}
 }

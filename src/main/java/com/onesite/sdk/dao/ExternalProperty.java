@@ -15,14 +15,35 @@
  */
 package com.onesite.sdk.dao;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.annotate.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class ExternalProperty
 {
+	@JsonProperty("Name")
 	private String name;
+
+	@JsonProperty("Type")
 	private String type;
+
+	@JsonProperty("Value")
 	private String value;
 
 	public ExternalProperty()
 	{
+	}
+
+	/**
+	 * Create an ExternalProperty with set values
+	 * 
+	 * @param name Name of the property (ie: wordpress)
+	 * @param type The type of the property (ie: lastLoginTime)
+	 */
+	public ExternalProperty(String name, String type)
+	{
+		this.setName(name);
+		this.setType(type);
 	}
 
 	/**

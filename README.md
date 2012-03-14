@@ -22,7 +22,7 @@ A development key is required to interact with any of the ONEsite services. You 
 
 ### Configuration
 ---
-The sdk uses a java system properties for global configuration. An example config file containing the necessary properties can be found at **doc/conf/onesite.properties**.
+The sdk uses a java system properties for global configuration. An example config file containing the necessary properties can be found at **doc/conf/onesite.properties**. These settings should be read and stored into your applications system properties.
 
 
 ### License

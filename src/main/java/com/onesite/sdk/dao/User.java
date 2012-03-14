@@ -15,33 +15,61 @@
  */
 package com.onesite.sdk.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.annotate.JsonProperty;
+
+import com.onesite.sdk.api.args.Constants.AccountStatus;
+
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class User
 {
+	@JsonProperty("UserID")
 	private long id;
+
+	@JsonProperty("Username")
 	private String username;
+
+	@JsonProperty("Email")
 	private String email;
 
-	private boolean anonymous = false;
-
-	private long nodeID;
-	private String domain;
-	private String accountStatus;
-
-	private String subdir;
+	@JsonProperty("Name")
 	private String displayName;
-		
-	private String avatarUrl;
-		
-	private List<ExternalAccount> linkedAccounts;
+
+	@JsonProperty("AccountStatus")
+	private AccountStatus accountStatus;
 	
+	@JsonProperty("Avatar")
+	private String avatarUrl;
+
+	@JsonProperty("ExternalAccounts")
+	private List<ExternalAccount> externalAccounts = new ArrayList<ExternalAccount>();
+
+	@JsonProperty("Site")
+	private Site site;
+	
+	@JsonProperty("Profile")
 	private Profile profile;
 	
+	@JsonProperty("Preferences")
+	private Preferences preferences; 
+
 	public User()
 	{
 	}
-		
+	
+	public User(long id)
+	{
+		this.setID(id);
+	}
+	
+	public User(String username)
+	{
+		this.setUsername(username);
+	}
+
 	public long getID()
 	{
 		return id;
@@ -72,46 +100,6 @@ public class User
 		this.email = email;
 	}
 
-	public long getNodeID()
-	{
-		return nodeID;
-	}
-
-	public void setNodeID(long nodeID)
-	{
-		this.nodeID = nodeID;
-	}
-
-	public String getDomain()
-	{
-		return domain;
-	}
-
-	public void setDomain(String domain)
-	{
-		this.domain = domain;
-	}
-
-	public String getAccountStatus()
-	{
-		return accountStatus;
-	}
-
-	public void setAccountStatus(String accountStatus)
-	{
-		this.accountStatus = accountStatus;
-	}
-
-	public String getSubdir()
-	{
-		return subdir;
-	}
-
-	public void setSubdir(String subdir)
-	{
-		this.subdir = subdir;
-	}
-
 	public String getDisplayName()
 	{
 		return displayName;
@@ -120,6 +108,16 @@ public class User
 	public void setDisplayName(String displayName)
 	{
 		this.displayName = displayName;
+	}
+
+	public AccountStatus getAccountStatus()
+	{
+		return accountStatus;
+	}
+
+	public void setAccountStatus(AccountStatus accountStatus)
+	{
+		this.accountStatus = accountStatus;
 	}
 
 	public String getAvatarUrl()
@@ -132,24 +130,29 @@ public class User
 		this.avatarUrl = avatarUrl;
 	}
 
-	public List<ExternalAccount> getLinkedAccounts()
+	public List<ExternalAccount> getExternalAccounts()
 	{
-		return linkedAccounts;
+		return externalAccounts;
 	}
 
-	public void setLinkedAccounts(List<ExternalAccount> linkedAccounts)
+	public void setExternalAccounts(List<ExternalAccount> externalAccounts)
 	{
-		this.linkedAccounts = linkedAccounts;
+		this.externalAccounts = externalAccounts;
+	}
+	
+	public void addExternalAccount(ExternalAccount account)
+	{
+		this.externalAccounts.add(account);
 	}
 
-	public boolean isAnonymous()
+	public Site getSite()
 	{
-		return anonymous;
+		return site;
 	}
 
-	public void setAnonymous(boolean anonymous)
+	public void setSite(Site site)
 	{
-		this.anonymous = anonymous;
+		this.site = site;
 	}
 
 	public Profile getProfile()
@@ -160,5 +163,16 @@ public class User
 	public void setProfile(Profile profile)
 	{
 		this.profile = profile;
-	}	
+	}
+
+	public Preferences getPreferences()
+	{
+		return preferences;
+	}
+
+	public void setPreferences(Preferences preferences)
+	{
+		this.preferences = preferences;
+	}
+
 }

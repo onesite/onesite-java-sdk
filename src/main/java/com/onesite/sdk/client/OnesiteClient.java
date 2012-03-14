@@ -19,10 +19,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 
+import org.apache.http.entity.mime.content.ContentBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.onesite.common.net.http.rest.client.RestClient;
+import com.onesite.commons.net.http.rest.client.RestClient;
+import com.onesite.commons.util.json.JsonUtil;
 
 public class OnesiteClient
 {
@@ -81,13 +83,22 @@ public class OnesiteClient
 	{
 		// Guarantee that the devkey is included with all service call
 		params.put("devkey", this.devkey);
-		
+
 		return client.get(path, params);
 	}
+	
+	public int post(String path, Map<String, String> params, ContentBody body) throws Exception
+	{
+		// Guarantee that the devkey is included with all service call
+		params.put("devkey", this.devkey);
+
+		return client.post(path, params, body);
+	}
+
 	/**
 	 * @see RestClient#getStatusCode()
 	 */
-	public int getStatusCode()
+	public int getHttpStatusCode()
 	{
 		return client.getStatusCode();
 	}
@@ -95,7 +106,7 @@ public class OnesiteClient
 	/**
 	 * @see RestClient#getStatusMessage()
 	 */
-	public String getStatusMessage()
+	public String getHttpStatusMessage()
 	{
 		return client.getStatusMessage();
 	}
@@ -103,8 +114,23 @@ public class OnesiteClient
 	/**
 	 * @see RestClient#getResult()
 	 */
-	public String getResult()
+	public String getHttpResult()
 	{
 		return client.getResult();
+	}
+	
+	public int getResultCode() throws Exception
+	{
+		return JsonUtil.getIntValueFromPath("code", this.getHttpResult());
+	}
+
+	public String getResultMessage() throws Exception
+	{
+		return JsonUtil.getStringValueFromPath("message", this.getHttpResult());
+	}
+
+	public String getResult() throws Exception
+	{
+		return JsonUtil.getJsonString(JsonUtil.getObjectFromPath("content", this.getHttpResult()));
 	}
 }

@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.onesite.common.util.json;
+package com.onesite.commons.util.json;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
@@ -43,8 +44,10 @@ public class JsonUtil
 	{
 		JsonFactory factory = new JsonFactory();
 		ObjectMapper mapper = new ObjectMapper(factory);
-
-		TypeReference<HashMap<Object, Object>> typeRef = new TypeReference<HashMap<Object, Object>>() {};
+		
+		TypeReference<HashMap<Object, Object>> typeRef = new TypeReference<HashMap<Object, Object>>()
+		{
+		};
 
 		return mapper.readValue(json, typeRef);
 	}
@@ -65,6 +68,27 @@ public class JsonUtil
 	}
 	
 	/**
+	 * Maps a json string to a pojo based on the annotated class
+	 * 
+	 * @param result json result
+	 * @param roodNode string to locate
+	 * @param clazz Class to map to
+	 * 
+	 * @return Object
+	 * @throws Exception
+	 */
+	public static Object getMappedClassFromJson(String result, String rootNode, Class clazz) throws Exception
+	{
+		// Map the content object into a tree
+		ObjectMapper mapper = new ObjectMapper();
+		JsonNode rootTreeNode = mapper.readTree(result);
+		JsonNode obj = rootTreeNode.get(rootNode);
+
+		// Parse it into a Java object.
+		return mapper.treeToValue(obj, clazz);
+	}
+
+	/**
 	 * Look up an Object based on a path (dot notation)
 	 * 
 	 * @param path
@@ -77,7 +101,7 @@ public class JsonUtil
 	{
 		return JsonPath.read(json, path);
 	}
-	
+
 	/**
 	 * Look up a string value based on a path (dot notation)
 	 * 
@@ -91,7 +115,7 @@ public class JsonUtil
 	{
 		return (String) getObjectFromPath(path, json);
 	}
-	
+
 	/**
 	 * Look up a int value based on a path (dot notation)
 	 * 
@@ -104,14 +128,14 @@ public class JsonUtil
 	public static int getIntValueFromPath(String path, String json) throws Exception
 	{
 		Object obj = getObjectFromPath(path, json);
-		
+
 		if (obj.getClass().equals(String.class)) {
 			return Integer.valueOf((String) obj);
-		} 
-		
+		}
+
 		return (Integer) obj;
 	}
-	
+
 	/**
 	 * Look up a long value based on a path (dot notation)
 	 * 
@@ -124,14 +148,14 @@ public class JsonUtil
 	public static long getLongValueFromPath(String path, String json) throws Exception
 	{
 		Object obj = getObjectFromPath(path, json);
-		
+
 		if (obj.getClass().equals(String.class)) {
 			return Long.valueOf((String) obj);
-		} 
-		
+		}
+
 		return (Long) obj;
 	}
-	
+
 	/**
 	 * Look up a list based on a path (dot notation)
 	 * 
@@ -144,5 +168,5 @@ public class JsonUtil
 	public static List<Object> getListValuesFromPath(String path, String json) throws Exception
 	{
 		return (List<Object>) getObjectFromPath(path, json);
-	}	
+	}
 }

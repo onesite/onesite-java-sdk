@@ -15,10 +15,128 @@
  */
 package com.onesite.sdk.test.api;
 
-import junit.framework.Assert;
-
+import org.apache.commons.lang.StringUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
-public class UserApiTest
+import com.onesite.commons.util.json.JsonUtil;
+import com.onesite.sdk.api.UserApi;
+import com.onesite.sdk.api.args.Constants.Gender;
+import com.onesite.sdk.dao.ExternalAccount;
+import com.onesite.sdk.dao.ExternalProperty;
+import com.onesite.sdk.dao.Password;
+import com.onesite.sdk.dao.Profile;
+import com.onesite.sdk.dao.User;
+import com.onesite.sdk.test.AbstractTestCase;
+
+public class UserApiTest extends AbstractTestCase
 {
+	public static final long userID = Long.valueOf(System.getProperty("test.userID", "0"));
+	public static final String email = System.getProperty("test.email", "test@onesite.com");
+	public static final String username = System.getProperty("test.username", String.format("java-sdk-test-%d", (int)(Math.random()*100)));
+	public static final String password = System.getProperty("test.pass", "");
+	public static final String agent = "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.2.26) Gecko/20120128 Firefox/3.6.26";
+	public static final String ip = "127.0.0.1";
+	public static final int expiresFromNow = 60 * 60 * 24 * 7;
+	public static final String callbackUrl = "http://example.com/";
+
+	@Test
+	public void testGetUserDetails()
+	{
+		UserApi api = new UserApi();
+
+		try {
+			User user = api.getDetails(new User(userID));
+
+			System.out.println("User");
+			System.out.println("id: " + user.getID());
+			System.out.println("username: " + user.getUsername());
+			System.out.println("email: " + user.getEmail());
+			System.out.println("account status: " + user.getAccountStatus());
+			System.out.println("Birthday: " + user.getProfile().getBirthday());
+			System.out.println("Timezone: " + user.getProfile().getTimezone().longValue());
+
+			Assert.assertFalse(StringUtils.isEmpty(user.getUsername()));
+
+			String json = JsonUtil.getJsonString(user);
+			System.out.println("Json format: \n" + json);
+
+		} catch (Exception e) {
+			Assert.fail();
+		}
+	}
+
+	@Test
+	public void testExternalProperty()
+	{
+		UserApi api = new UserApi();
+
+		try {
+			// add a value
+			boolean result = api.setExternalProperty(new User(userID), new ExternalProperty("foo", "awesome", "true"));
+			Assert.assertTrue(result);
+
+			// get the value
+			ExternalProperty prop = api.getExternalProperty(new User(userID), new ExternalProperty("foo", "awesome"));
+			Assert.assertTrue(prop.getValue().equals("true"));
+
+			// delete the value
+			result = api.deleteExternalProperty(new User(userID), new ExternalProperty("foo", "awesome"));
+			Assert.assertTrue(result);
+		} catch (Exception e) {
+			Assert.fail();
+		}
+	}
+
+	@Test
+	public void testCreate()
+	{
+		UserApi api = new UserApi();
+
+		try {
+			User user = new User();
+			user.setEmail("test@onesite.com");
+			user.addExternalAccount(new ExternalAccount("facebook", String.format("abc%d", (int)(Math.random()*1000)), "0987654321abcdefghijklmnopqrstuvwxyz"));
+
+			User result = api.create(user, new Password("123456"), null);
+
+			String json = JsonUtil.getJsonString(result);
+			System.out.println("Json format: \n" + json);
+
+			Assert.assertNotNull(result);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.fail();
+		}
+	}
+
+	@Test
+	public void testCreate2()
+	{
+		UserApi api = new UserApi();
+
+		try {
+			User user = new User();
+			user.setEmail(email);
+			user.setUsername(username);
+			
+			Profile profile = new Profile();
+			profile.setFirstName("test");
+			profile.setGender(Gender.MALE);
+			
+			user.setProfile(profile);
+			
+			User result = api.create(user, new Password("123456"), null);
+
+			Assert.assertNotSame(result.getID(), 0);
+			
+			String json = JsonUtil.getJsonString(result);
+			System.out.println("Json format: \n" + json);
+
+			Assert.assertNotNull(result);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.fail();
+		}
+	}
 }

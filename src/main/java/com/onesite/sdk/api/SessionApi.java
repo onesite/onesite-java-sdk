@@ -23,7 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.onesite.common.util.json.JsonUtil;
+import com.onesite.commons.util.json.JsonUtil;
 import com.onesite.sdk.client.OnesiteResultCode;
 import com.onesite.sdk.dao.Session;
 import com.onesite.sdk.dao.User;
@@ -56,13 +56,9 @@ public class SessionApi extends ApiMethod
 
 		params.put("ip", session.getIp());
 		params.put("agent", session.getAgent());
-		params.put("expires", Long.toString(session.getExpiresTime().getTime()));
-
-		User user = session.getUser();
+		params.put("expires", Long.toString(session.getExpiresTime()));
 		
-		if (user == null) {
-			user = new User();
-		}
+		User user = session.getUser();
 		
 		if (user.getID() != 0) {
 			params.put("user_id", Long.toString(user.getID()));
@@ -75,16 +71,13 @@ public class SessionApi extends ApiMethod
 		}
 
 		if (!session.getSessionData().isEmpty()) {
-			// TODO: send stuff
-			// params.put("session_data", sessionData);
+			params.put("session_data", session.getSessionData().toString());
 		}
 
 		try {
 			String result = this.get("/1/session/create.json", params);
-
-			session.setCoreU(JsonUtil.getStringValueFromPath("content.core_u", result));
-			session.setCoreX(JsonUtil.getStringValueFromPath("content.core_x", result));
-
+			session = (Session) JsonUtil.getMappedClassFromJson(result, "session", Session.class);
+			
 			return session;
 		} catch (Exception e) {
 			log.error("Error creating session", e);
@@ -124,9 +117,8 @@ public class SessionApi extends ApiMethod
 		try {
 			String result = this.get("/1/session/createCrossDomain.json", params);
 
-			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("content.redirect_url", result))) {
-				URL url = new URL(JsonUtil.getStringValueFromPath("content.redirect_url", result));
-				return url;
+			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("redirect_url", result))) {
+				return new URL(JsonUtil.getStringValueFromPath("redirect_url", result));
 			}
 		} catch (Exception e) {
 			log.error("Error creating cross domain session url", e);
@@ -170,11 +162,7 @@ public class SessionApi extends ApiMethod
 
 		try {
 			String result = this.get("/1/session/login.json", params);
-
-			Session session = new Session();
-			session.setCoreU(JsonUtil.getStringValueFromPath("content.core_u", result));
-			session.setCoreX(JsonUtil.getStringValueFromPath("content.core_x", result));
-			
+			Session session = (Session) JsonUtil.getMappedClassFromJson(result, "session", Session.class);
 			return session;
 		} catch (Exception e) {
 			log.error("Error logging User in and creating new session", e);
@@ -221,8 +209,8 @@ public class SessionApi extends ApiMethod
 		try {
 			String result = this.get("/1/session/loginCrossDomain.json", params);
 
-			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("content.redirect_url", result))) {
-				return new URL(JsonUtil.getStringValueFromPath("content.redirect_url", result));
+			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("redirect_url", result))) {
+				return new URL(JsonUtil.getStringValueFromPath("redirect_url", result));
 			}
 		} catch (Exception e) {
 			log.error("Error createing redirect url for loginCrossDomain", e);
@@ -296,8 +284,7 @@ public class SessionApi extends ApiMethod
 
 		try {
 			String result = this.get("/1/session/check.json", params);
-
-			// TODO: populate session object
+			session = (Session) JsonUtil.getMappedClassFromJson(result, "session", Session.class);
 			return session;
 		} catch (Exception e) {
 			log.error("Error checking session status", e);
@@ -324,14 +311,12 @@ public class SessionApi extends ApiMethod
 		params.put("domain", domain);
 		params.put("ip", ip);
 		params.put("agent", agent);
-		// params.put("exires", Long.toString(expiresFromNow));
 		
 		try {
 			String result = this.get("/1/session/joinCrossDomain.json", params);
 
-			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("content.redirect_url", result))) {
-				URL url = new URL(JsonUtil.getStringValueFromPath("content.redirect_url", result));
-				return url;
+			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("redirect_url", result))) {
+				return new URL(JsonUtil.getStringValueFromPath("redirect_url", result));
 			}
 		} catch (Exception e) {
 			log.error("Error joining cross domain session", e);

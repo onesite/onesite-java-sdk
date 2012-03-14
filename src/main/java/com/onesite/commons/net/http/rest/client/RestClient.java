@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.onesite.common.net.http.rest.client;
+package com.onesite.commons.net.http.rest.client;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,6 +27,9 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.ContentBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,14 +42,14 @@ public class RestClient
 	private static final Logger log = LoggerFactory.getLogger(RestClient.class);
 
 	private HttpHost target;
-	
+
 	protected int status;
 	protected String statusMessage;
 	protected String result;
 
 	/**
 	 * Creates a new Rest client
-	 *
+	 * 
 	 * @param host
 	 * @param port
 	 * @param schema
@@ -67,35 +70,82 @@ public class RestClient
 	 */
 	public int get(String path, Map<String, String> params) throws Exception
 	{
-		String query_string = "";
-
-		if (params != null) {
-			for (Map.Entry<String, String> val : params.entrySet()) {
-				String encodedKey = "";
-				String encodedValue = "";
-
-				// Encode the keys and values and add them to the query string
-				try {
-					encodedKey = URLEncoder.encode(val.getKey().toString(), "UTF-8");
-					encodedValue = URLEncoder.encode(val.getValue().toString(), "UTF-8");
-
-					query_string = query_string + "&" + encodedKey + "=" + encodedValue;
-				} catch (UnsupportedEncodingException e) {
-					throw new Exception("Error encoding query parameters", e);
-				}
-			}
-		}
-
-		// Build the url from the path and params
-		String url = path + "?" + query_string;
-		log.debug("Encoded URL: " + url);
+		String url = this.generateEncodeURLString(path, params);
 
 		DefaultHttpClient httpClient = new DefaultHttpClient();
+
 		HttpGet request = new HttpGet(url);
 		request.addHeader("accept", "application/json");
 
-		HttpResponse response = httpClient.execute(this.target, request);
+		try {
+			HttpResponse response = httpClient.execute(this.target, request);
 
+			try {
+				this.processHttpResponse(response);
+			} catch (Exception e) {
+				log.error("Error processing HttpResponse from " + url);
+				throw e;
+			}
+		} catch (Exception e) {
+			log.error("Error occurred during calling to " + url);
+			throw e;
+		} finally {
+			httpClient.getConnectionManager().shutdown();
+		}
+
+		return status;
+	}
+
+	/**
+	 * Create a POST request to the given url posting the ContentBody to the content tag
+	 * URL = scheme://host:port/path?query_string
+	 * 
+	 * @param path
+	 * @param params
+	 * @param body
+	 * @return
+	 * @throws Exception
+	 */
+	public int post(String path, Map<String, String> params, ContentBody body) throws Exception
+	{
+		String url = this.generateEncodeURLString(path, params);
+
+		DefaultHttpClient httpClient = new DefaultHttpClient();
+
+		HttpPost request = new HttpPost(url);
+		request.addHeader("accept", "application/json");
+
+		MultipartEntity entity = new MultipartEntity();
+		entity.addPart("content", body);
+		request.setEntity(entity);
+
+		try {
+			HttpResponse response = httpClient.execute(this.target, request);
+
+			try {
+				this.processHttpResponse(response);
+			} catch (Exception e) {
+				log.error("Error processing HttpResponse from " + url);
+				throw e;
+			}
+		} catch (Exception e) {
+			log.error("Error occurred during calling to " + url);
+			throw e;
+		} finally {
+			httpClient.getConnectionManager().shutdown();
+		}
+
+		return status;
+	}
+
+	/**
+	 * Process the http response and set the status, message and result for the HttpResponse
+	 * 
+	 * @param response
+	 * @throws Exception
+	 */
+	private void processHttpResponse(HttpResponse response) throws Exception
+	{
 		status = response.getStatusLine().getStatusCode();
 		statusMessage = response.getStatusLine().getReasonPhrase();
 
@@ -104,9 +154,6 @@ public class RestClient
 		}
 
 		this.result = convertStreamToString(response.getEntity().getContent());
-		httpClient.getConnectionManager().shutdown();
-
-		return status;
 	}
 
 	/**
@@ -136,6 +183,42 @@ public class RestClient
 		}
 
 		return sb.toString();
+	}
+
+	/**
+	 * Generate an encoded url string for the given path and query parameters
+	 * 
+	 * @param path
+	 * @param params
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	private String generateEncodeURLString(String path, Map<String, String> params) throws Exception
+	{
+		StringBuilder queryString = new StringBuilder();
+
+		if (params != null) {
+			for (Map.Entry<String, String> val : params.entrySet()) {
+				String encodedKey = "";
+				String encodedValue = "";
+
+				// Encode the keys and values and add them to the query string
+				try {
+					encodedKey = URLEncoder.encode(val.getKey().toString(), "UTF-8");
+					encodedValue = URLEncoder.encode(val.getValue().toString(), "UTF-8");
+
+					queryString.append(String.format("&%s=%s", encodedKey, encodedValue));
+				} catch (UnsupportedEncodingException e) {
+					throw new Exception("Error encoding query parameters", e);
+				}
+			}
+		}
+
+		String url = String.format("%s?%s", path, queryString.toString());
+		log.debug("Encoded url string: " + url);
+
+		return url;
 	}
 
 	/**

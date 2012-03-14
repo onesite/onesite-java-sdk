@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.onesite.sdk.client;
+package com.onesite.commons.util.json;
 
-/**
- * Constants enumerating the HTTP status codes.
- * 
- * @see org.apache.http.HttpStatus
- *
- */
-public class HttpStatus implements org.apache.http.HttpStatus
+import java.io.IOException;
+import java.util.Date;
+
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.DeserializationContext;
+import org.codehaus.jackson.map.JsonDeserializer;
+
+public class JsonDateDeserializerFromSeconds extends JsonDeserializer<Date>
 {
-
+	@Override
+	public Date deserialize(JsonParser parser, DeserializationContext context) throws IOException, JsonProcessingException
+	{
+		return new Date(parser.getLongValue() * 1000);
+	}
 }
