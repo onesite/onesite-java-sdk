@@ -1,7 +1,7 @@
 # ONEsite Java Sdk
 ---
 This open source Java library provides a simple interface for you to integrate ONEsite services into any existing Java application. More
-in depth guides and API documentation can be found [http://developer.onesite.com](http://developer.onesite.com).
+in depth guides and API documentation can be found on our developer portal at [http://developer.onesite.com](http://developer.onesite.com).
 
 
 ### Requirements
