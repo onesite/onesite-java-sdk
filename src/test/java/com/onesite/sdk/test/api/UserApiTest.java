@@ -19,15 +19,14 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.onesite.commons.util.json.JsonUtil;
 import com.onesite.sdk.api.UserApi;
-import com.onesite.sdk.api.args.Constants.Gender;
-import com.onesite.sdk.dao.ExternalAccount;
-import com.onesite.sdk.dao.ExternalProperty;
-import com.onesite.sdk.dao.Password;
-import com.onesite.sdk.dao.Profile;
-import com.onesite.sdk.dao.User;
 import com.onesite.sdk.test.AbstractTestCase;
+import com.onesite.sdk.thrift.dao.ExternalAccount;
+import com.onesite.sdk.thrift.dao.ExternalProperty;
+import com.onesite.sdk.thrift.dao.Password;
+import com.onesite.sdk.thrift.dao.Profile;
+import com.onesite.sdk.thrift.dao.User;
+import com.onesite.sdk.thrift.dao.constants.Gender;
 
 public class UserApiTest extends AbstractTestCase
 {
@@ -46,21 +45,20 @@ public class UserApiTest extends AbstractTestCase
 		UserApi api = new UserApi();
 
 		try {
-			User user = api.getDetails(new User(userID));
+			User testUser = new User();
+			testUser.setId(userID);
+			
+			User user = api.getDetails(testUser);
 
 			System.out.println("User");
-			System.out.println("id: " + user.getID());
+			System.out.println("id: " + user.getId());
 			System.out.println("username: " + user.getUsername());
 			System.out.println("email: " + user.getEmail());
 			System.out.println("account status: " + user.getAccountStatus());
 			System.out.println("Birthday: " + user.getProfile().getBirthday());
-			System.out.println("Timezone: " + user.getProfile().getTimezone().longValue());
+			System.out.println("Timezone: " + user.getProfile().getTimezone());
 
 			Assert.assertFalse(StringUtils.isEmpty(user.getUsername()));
-
-			String json = JsonUtil.getJsonString(user);
-			System.out.println("Json format: \n" + json);
-
 		} catch (Exception e) {
 			Assert.fail();
 		}
@@ -72,16 +70,19 @@ public class UserApiTest extends AbstractTestCase
 		UserApi api = new UserApi();
 
 		try {
+			User testUser = new User();
+			testUser.setId(userID);
+			
 			// add a value
-			boolean result = api.setExternalProperty(new User(userID), new ExternalProperty("foo", "awesome", "true"));
+			boolean result = api.setExternalProperty(testUser, new ExternalProperty("foo", "awesome").setValue("true"));
 			Assert.assertTrue(result);
 
 			// get the value
-			ExternalProperty prop = api.getExternalProperty(new User(userID), new ExternalProperty("foo", "awesome"));
+			ExternalProperty prop = api.getExternalProperty(testUser, new ExternalProperty("foo", "awesome"));
 			Assert.assertTrue(prop.getValue().equals("true"));
 
 			// delete the value
-			result = api.deleteExternalProperty(new User(userID), new ExternalProperty("foo", "awesome"));
+			result = api.deleteExternalProperty(testUser, new ExternalProperty("foo", "awesome"));
 			Assert.assertTrue(result);
 		} catch (Exception e) {
 			Assert.fail();
@@ -96,12 +97,9 @@ public class UserApiTest extends AbstractTestCase
 		try {
 			User user = new User();
 			user.setEmail("test@onesite.com");
-			user.addExternalAccount(new ExternalAccount("facebook", String.format("abc%d", (int)(Math.random()*1000)), "0987654321abcdefghijklmnopqrstuvwxyz"));
+			user.addToExternalAccounts(new ExternalAccount("facebook", String.format("abc%d", (int)(Math.random()*1000)), "0987654321abcdefghijklmnopqrstuvwxyz"));
 
 			User result = api.create(user, new Password("123456"), null);
-
-			String json = JsonUtil.getJsonString(result);
-			System.out.println("Json format: \n" + json);
 
 			Assert.assertNotNull(result);
 		} catch (Exception e) {
@@ -128,12 +126,9 @@ public class UserApiTest extends AbstractTestCase
 			
 			User result = api.create(user, new Password("123456"), null);
 
-			Assert.assertNotSame(result.getID(), 0);
-			
-			String json = JsonUtil.getJsonString(result);
-			System.out.println("Json format: \n" + json);
-
 			Assert.assertNotNull(result);
+
+			Assert.assertNotSame(result.getId(), 0);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Assert.fail();

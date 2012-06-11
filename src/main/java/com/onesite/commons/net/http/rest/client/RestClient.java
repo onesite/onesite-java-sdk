@@ -15,14 +15,11 @@
  */
 package com.onesite.commons.net.http.rest.client;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -31,6 +28,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.ContentBody;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,36 +151,7 @@ public class RestClient
 			throw new Exception("Error: " + response.getStatusLine().getStatusCode());
 		}
 
-		this.result = convertStreamToString(response.getEntity().getContent());
-	}
-
-	/**
-	 * Convert an InputStream to String
-	 * 
-	 * @param inStream
-	 * @return result
-	 */
-	private String convertStreamToString(InputStream inStream)
-	{
-		BufferedReader reader = new BufferedReader(new InputStreamReader(inStream));
-		StringBuilder sb = new StringBuilder();
-
-		String line = null;
-		try {
-			while ((line = reader.readLine()) != null) {
-				sb.append(line + "\n");
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				inStream.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-
-		return sb.toString();
+		this.result = new String(EntityUtils.toByteArray(response.getEntity()));
 	}
 
 	/**
@@ -205,10 +174,12 @@ public class RestClient
 
 				// Encode the keys and values and add them to the query string
 				try {
-					encodedKey = URLEncoder.encode(val.getKey().toString(), "UTF-8");
-					encodedValue = URLEncoder.encode(val.getValue().toString(), "UTF-8");
-
-					queryString.append(String.format("&%s=%s", encodedKey, encodedValue));
+					encodedKey = URLEncoder.encode(val.getKey(), "UTF-8");
+					
+					if (!StringUtils.isEmpty(val.getValue())) {
+						encodedValue = URLEncoder.encode(val.getValue(), "UTF-8");
+						queryString.append(String.format("&%s=%s", encodedKey, encodedValue));
+					}
 				} catch (UnsupportedEncodingException e) {
 					throw new Exception("Error encoding query parameters", e);
 				}

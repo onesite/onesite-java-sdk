@@ -22,16 +22,20 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.onesite.commons.util.json.JsonUtil;
-import com.onesite.sdk.api.args.UserCreateOptions;
 import com.onesite.sdk.client.OnesiteException;
 import com.onesite.sdk.client.OnesiteResultCode;
-import com.onesite.sdk.dao.ExternalAccount;
-import com.onesite.sdk.dao.ExternalProperty;
-import com.onesite.sdk.dao.Password;
-import com.onesite.sdk.dao.Preferences;
-import com.onesite.sdk.dao.Profile;
-import com.onesite.sdk.dao.User;
+import com.onesite.sdk.thrift.api.ResponseBoolean;
+import com.onesite.sdk.thrift.api.ResponseExternalAccount;
+import com.onesite.sdk.thrift.api.ResponseExternalProperty;
+import com.onesite.sdk.thrift.api.ResponseLong;
+import com.onesite.sdk.thrift.api.ResponseUser;
+import com.onesite.sdk.thrift.api.UserCreateOptions;
+import com.onesite.sdk.thrift.dao.ExternalAccount;
+import com.onesite.sdk.thrift.dao.ExternalProperty;
+import com.onesite.sdk.thrift.dao.Password;
+import com.onesite.sdk.thrift.dao.Preferences;
+import com.onesite.sdk.thrift.dao.Profile;
+import com.onesite.sdk.thrift.dao.User;
 
 /**
  * API for creating and managing ONESite Users
@@ -57,7 +61,7 @@ public class UserApi extends ApiMethod
 	public UserApi()
 	{
 	}
-
+	
 	/**
 	 * Creates a new User account
 	 * 
@@ -90,7 +94,7 @@ public class UserApi extends ApiMethod
 		}
 
 		// From #ExternalAccount
-		if (user.getExternalAccounts().size() > 0) {
+		if (user.getExternalAccountsSize() > 0) {
 			ExternalAccount account = user.getExternalAccounts().get(0);
 
 			params.put("external_provider_name", account.getProviderName());
@@ -111,12 +115,12 @@ public class UserApi extends ApiMethod
 				params.put("group_member_status", options.getGroupMemberStatus().toString());
 			}
 
-			if (options.getInitialGroup() != null) {
-				params.put("join_group", String.valueOf(options.getInitialGroup().longValue()));
+			if (options.getJoinInitialGroup() != 0) {
+				params.put("join_group", String.valueOf(options.getJoinInitialGroup()));
 			}
 
-			if (options.getInitialFriend() != null) {
-				params.put("add_friend", String.valueOf(options.getInitialFriend().longValue()));
+			if (options.getAddInitialFriend() != 0) {
+				params.put("add_friend", String.valueOf(options.getAddInitialFriend()));
 			}
 
 			if (options.getReferringUrl() != null) {
@@ -129,8 +133,9 @@ public class UserApi extends ApiMethod
 		User newUser = null;
 
 		try {
-			String result = this.get("/1/user/create.json", params);
-			newUser = (User) JsonUtil.getMappedClassFromJson(result, "user", User.class);
+			ResponseUser response = new ResponseUser();
+			this.get("/1/user/create.thrift", params, response);
+			newUser = response.getUser();
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s creating User: %s", e.getErrorCode(), e.getMessage()));
 			throw e;
@@ -141,8 +146,8 @@ public class UserApi extends ApiMethod
 
 		// Add any additional external accounts to the user
 		if (newUser != null) {
-			if (user.getExternalAccounts().size() > 1) {
-				for (int i = 1; i > user.getExternalAccounts().size(); i++) {
+			if (user.getExternalAccountsSize() > 1) {
+				for (int i = 1; i > user.getExternalAccountsSize(); i++) {
 					ExternalAccount account = user.getExternalAccounts().get(i);
 					this.addExternalAccount(newUser, account);
 				}
@@ -164,8 +169,8 @@ public class UserApi extends ApiMethod
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -174,8 +179,9 @@ public class UserApi extends ApiMethod
 			throw new Exception("Missing valid User identifier");
 		}
 
-		try {
-			this.get("/1/user/delete.json", params);
+		try {	
+			ResponseBoolean response = new ResponseBoolean();
+			this.get("/1/user/delete.thrift", params, response);
 			return true;
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s deleting User: %s", e.getErrorCode(), e.getMessage()));
@@ -200,8 +206,8 @@ public class UserApi extends ApiMethod
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -214,8 +220,9 @@ public class UserApi extends ApiMethod
 			// Create User MAP<String, String> and save all values in the params
 			params.putAll(this.generateMapFromUser(user));
 
-			String result = this.get("/1/user/update.json", params);
-			return (User) JsonUtil.getMappedClassFromJson(result, "user", User.class);
+			ResponseUser response = new ResponseUser();
+			this.get("/1/user/update.thrift", params, response);
+			return response.getUser();
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s updating User: %s", e.getErrorCode(), e.getMessage()));
 			throw e;
@@ -237,8 +244,8 @@ public class UserApi extends ApiMethod
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -248,8 +255,9 @@ public class UserApi extends ApiMethod
 		}
 
 		try {
-			String result = this.get("/1/user/getDetails.json", params);
-			return (User) JsonUtil.getMappedClassFromJson(result, "user", User.class);
+			ResponseUser response = new ResponseUser();
+			this.get("/1/user/getDetails.thrift", params, response);
+			return response.getUser();
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s getting User details: %s", e.getErrorCode(), e.getMessage()));
 			throw e;
@@ -275,8 +283,9 @@ public class UserApi extends ApiMethod
 		try {
 			params.put("username", username);
 
-			this.get("/1/user/isUsernameTaken.json", params);
-			return true;
+			ResponseBoolean response = new ResponseBoolean();
+			this.get("/1/user/isUsernameTaken.thrift", params, response);
+			return response.isContent();
 		} catch (OnesiteException e) {
 			if (e.getErrorCode() == ResultCode.USERNAME_TAKEN) {
 				return false;
@@ -305,8 +314,9 @@ public class UserApi extends ApiMethod
 		try {
 			params.put("email", email);
 
-			this.get("/1/user/isEmailTaken.json", params);
-			return true;
+			ResponseBoolean response = new ResponseBoolean();
+			this.get("/1/user/isEmailTaken.thrift", params, response);
+			return response.isContent();
 		} catch (OnesiteException e) {
 			if (e.getErrorCode() == ResultCode.EMAIL_TAKEN) {
 				return false;
@@ -335,8 +345,9 @@ public class UserApi extends ApiMethod
 		try {
 			params.put("subdir", subdir);
 
-			this.get("/1/user/isSubdirTaken.json", params);
-			return true;
+			ResponseBoolean response = new ResponseBoolean();
+			this.get("/1/user/isSubdirTaken.thrift", params, response);
+			return response.isContent();
 		} catch (OnesiteException e) {
 			if (e.getErrorCode() == ResultCode.SUBDIR_TAKEN) {
 				return false;
@@ -365,8 +376,9 @@ public class UserApi extends ApiMethod
 			params.put("exernal_provider_name", account.getProviderName());
 			params.put("external_user_identifier", account.getUserIdentifier());
 
-			this.get("/1/user/isExternalAccountTaken.json", params);
-			return true;
+			ResponseBoolean response = new ResponseBoolean();
+			this.get("/1/user/isExternalAccountTaken.thrift", params, response);
+			return response.isContent();
 		} catch (OnesiteException e) {
 			if (e.getErrorCode() == ResultCode.ACCOUNT_TAKEN) {
 				return false;
@@ -392,8 +404,8 @@ public class UserApi extends ApiMethod
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -407,11 +419,9 @@ public class UserApi extends ApiMethod
 			params.put("external_user_identifier", account.getUserIdentifier());
 			params.put("external_access_token", account.getAccessToken());
 
-			String result = this.get("/1/user/addExternalAccount.json", params);
-
-			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("uniqueId", result))) {
-				return true;
-			}
+			ResponseBoolean response = new ResponseBoolean();
+			this.get("/1/user/addExternalAccount.thrift", params, response);
+			return true;
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s adding external account: %s", e.getErrorCode(), e.getMessage()));
 			throw e;
@@ -419,8 +429,6 @@ public class UserApi extends ApiMethod
 			log.error("Error adding external account", e);
 			throw e;
 		}
-
-		return false;
 	}
 
 	/**
@@ -436,8 +444,8 @@ public class UserApi extends ApiMethod
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -451,11 +459,9 @@ public class UserApi extends ApiMethod
 			params.put("external_user_identifier", account.getUserIdentifier());
 			params.put("external_access_token", account.getAccessToken());
 
-			String result = this.get("/1/user/updateExternalAccount.json", params);
-
-			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("uniqueId", result))) {
-				return true;
-			}
+			ResponseBoolean response = new ResponseBoolean();
+			this.get("/1/user/updateExternalAccount.thrift", params, response);
+			return true;			
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s updating external account: %s", e.getErrorCode(), e.getMessage()));
 			throw e;
@@ -463,8 +469,6 @@ public class UserApi extends ApiMethod
 			log.error("Error updating external account", e);
 			throw e;
 		}
-
-		return false;
 	}
 
 	/**
@@ -480,8 +484,8 @@ public class UserApi extends ApiMethod
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -493,11 +497,9 @@ public class UserApi extends ApiMethod
 		try {
 			params.put("exernal_provider_name", account.getProviderName());
 
-			String result = this.get("/1/user/deleteExternalAccount.json", params);
-
-			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("uniqueId", result))) {
-				return true;
-			}
+			ResponseBoolean response = new ResponseBoolean();
+			this.get("/1/user/deleteExternalAccount.json", params, response);
+			return true;
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s deleting external account: %s", e.getErrorCode(), e.getMessage()));
 			throw e;
@@ -505,8 +507,6 @@ public class UserApi extends ApiMethod
 			log.error("Error deleting external account", e);
 			throw e;
 		}
-
-		return false;
 	}
 
 	/**
@@ -522,8 +522,8 @@ public class UserApi extends ApiMethod
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -535,8 +535,9 @@ public class UserApi extends ApiMethod
 		try {
 			params.put("exernal_provider_name", account.getProviderName());
 
-			String result = this.get("/1/user/getExternalAccount.json", params);
-			return (ExternalAccount) JsonUtil.getMappedClassFromJson(result, "external_account", ExternalAccount.class);
+			ResponseExternalAccount response = new ResponseExternalAccount();
+			this.get("/1/user/getExternalAccount.thrift", params, response);
+			return response.getExternalAccount();			
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s setting external account: %s", e.getErrorCode(), e.getMessage()));
 			throw e;
@@ -559,8 +560,8 @@ public class UserApi extends ApiMethod
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -574,11 +575,9 @@ public class UserApi extends ApiMethod
 			params.put("type", prop.getType());
 			params.put("value", prop.getValue());
 
-			String result = this.get("/1/user/addExternalProperty.json", params);
-
-			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("uniqueId", result))) {
-				return true;
-			}
+			ResponseBoolean response = new ResponseBoolean();
+			this.get("/1/user/addExternalProperty.thrift", params, response);
+			return true;
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s adding external property: %s", e.getErrorCode(), e.getMessage()));
 			throw e;
@@ -586,8 +585,6 @@ public class UserApi extends ApiMethod
 			log.error("Error adding external property", e);
 			throw e;
 		}
-
-		return false;
 	}
 
 	/**
@@ -603,8 +600,8 @@ public class UserApi extends ApiMethod
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -617,8 +614,9 @@ public class UserApi extends ApiMethod
 			params.put("name", prop.getName());
 			params.put("type", prop.getType());
 
-			String result = this.get("/1/user/getExternalProperty.json", params);
-			return (ExternalProperty) JsonUtil.getMappedClassFromJson(result, "external_property", ExternalProperty.class);
+			ResponseExternalProperty response = new ResponseExternalProperty();
+			this.get("/1/user/getExternalProperty.thrift", params, response);
+			return response.getExternalProperty();	
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s getting external property: %s", e.getErrorCode(), e.getMessage()));
 			throw e;
@@ -641,8 +639,8 @@ public class UserApi extends ApiMethod
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -655,11 +653,9 @@ public class UserApi extends ApiMethod
 			params.put("name", prop.getName());
 			params.put("type", prop.getType());
 
-			String result = this.get("/1/user/deleteExternalProperty.json", params);
-
-			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("uniqueId", result))) {
-				return true;
-			}
+			ResponseBoolean response = new ResponseBoolean();
+			this.get("/1/user/deleteExternalProperty.thrift", params, response);
+			return true;
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s deleting external property: %s", e.getErrorCode(), e.getMessage()));
 			throw e;
@@ -667,8 +663,6 @@ public class UserApi extends ApiMethod
 			log.error("Error deleting external property", e);
 			throw e;
 		}
-
-		return false;
 	}
 
 	/**
@@ -688,8 +682,9 @@ public class UserApi extends ApiMethod
 			params.put("type", prop.getType());
 			params.put("value", prop.getValue());
 
-			String result = this.get("/1/user/getUserByExternalProperty.json", params);
-			return (User) JsonUtil.getMappedClassFromJson(result, "user", User.class);
+			ResponseUser response = new ResponseUser();
+			this.get("/1/user/getUserByExternalProperty.thrift", params, response);
+			return response.getUser();
 		} catch (OnesiteException e) {
 			log.debug(String.format("Error %s getting User by external property: %s", e.getErrorCode(), e.getMessage()));
 			throw e;
@@ -719,9 +714,9 @@ public class UserApi extends ApiMethod
 		params.put("no_redir", "1");
 
 		try {
-			String result = this.get("/1/user/validateCredentials.json", params);
-
-			long userID = JsonUtil.getLongValueFromPath("content.user_id", result);
+			ResponseLong response = new ResponseLong();
+			this.get("/1/user/validateCredentials.thrift", params, response);
+			long userID = response.getContent();
 
 			if (userID > -1) {
 				return true;
@@ -739,7 +734,7 @@ public class UserApi extends ApiMethod
 
 	/**
 	 * Creates a Map<String, String> from the User object to send to the Create and Update APIs.
-	 * This function is private due to the work being currently done to the service to take direct json
+	 * This function is private due to the work being currently done to the service to take direct objects
 	 * representation of the User object.
 	 * 
 	 * @param user User to create a map from
@@ -763,16 +758,16 @@ public class UserApi extends ApiMethod
 			params.put("account_status", user.getAccountStatus().toString());
 		}
 
-		if (!StringUtils.isEmpty(user.getAvatarUrl())) {
-			params.put("avatar", user.getAvatarUrl());
+		if (!StringUtils.isEmpty(user.getAvatar())) {
+			params.put("avatar", user.getAvatar());
 		}
 
 		// From #Profile
 		Profile profile = user.getProfile();
 
 		if (profile != null) {
-			if (profile.getBirthday() != null) {
-				params.put("birthday", String.valueOf(profile.getBirthday().getTime() / 1000));
+			if (profile.getBirthday() != 0) {
+				params.put("birthday", String.valueOf(profile.getBirthday()));
 			}
 
 			if (!StringUtils.isEmpty(profile.getFirstName())) {
@@ -823,12 +818,13 @@ public class UserApi extends ApiMethod
 				params.put("country", profile.getCountry());
 			}
 
-			if (profile.getTimezone() != null) {
-				params.put("timezone", String.valueOf(profile.getTimezone().longValue()));
-			}
-
-			params.put("locale", profile.getLocale().getDisplayVariant());
+			params.put("timezone", String.valueOf(profile.getTimezone()));
+			
+			if (!StringUtils.isEmpty(profile.getLocale())) {
+				params.put("locale", profile.getLocale());
+			}	
 		}
+		
 		// From #Preferences
 		Preferences preferences = user.getPreferences();
 

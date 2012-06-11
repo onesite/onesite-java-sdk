@@ -17,14 +17,15 @@ package com.onesite.sdk.client;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.http.entity.mime.content.ContentBody;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.onesite.commons.net.http.rest.client.RestClient;
-import com.onesite.commons.util.json.JsonUtil;
 
 public class OnesiteClient
 {
@@ -81,6 +82,10 @@ public class OnesiteClient
 	 */
 	public int get(String path, Map<String, String> params) throws Exception
 	{
+		if (params == null) {
+			params = new HashMap<String, String>();
+		}
+		
 		// Guarantee that the devkey is included with all service call
 		params.put("devkey", this.devkey);
 
@@ -89,6 +94,10 @@ public class OnesiteClient
 	
 	public int post(String path, Map<String, String> params, ContentBody body) throws Exception
 	{
+		if (params == null) {
+			params = new HashMap<String, String>();
+		}
+		
 		// Guarantee that the devkey is included with all service call
 		params.put("devkey", this.devkey);
 
@@ -119,18 +128,57 @@ public class OnesiteClient
 		return client.getResult();
 	}
 	
+	/**
+	 * Get the result code from the service response
+	 * 
+	 * @return result code
+	 * @throws Exception
+	 */
 	public int getResultCode() throws Exception
 	{
-		return JsonUtil.getIntValueFromPath("code", this.getHttpResult());
+		try {
+			JSONObject result = new JSONObject(this.getHttpResult());
+			return result.getInt("code");
+		} catch (Exception e) {
+			log.debug("Service response was not json formatted");
+		}
+		
+		throw new Exception("Unknown service response format");
 	}
 
+	/**
+	 * Get the result message from the service response
+	 * 
+	 * @return result message
+	 * @throws Exception
+	 */
 	public String getResultMessage() throws Exception
 	{
-		return JsonUtil.getStringValueFromPath("message", this.getHttpResult());
+		try {
+			JSONObject result = new JSONObject(this.getHttpResult());
+			return result.getString("message");
+		} catch (Exception e) {
+			log.debug("Service response was not json formatted");
+		}
+		
+		throw new Exception("Unknown service response format");
 	}
 
+	/**
+	 * Get the content from the service response
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
 	public String getResult() throws Exception
 	{
-		return JsonUtil.getJsonString(JsonUtil.getObjectFromPath("content", this.getHttpResult()));
+		try {
+			JSONObject result = new JSONObject(this.getHttpResult());
+			return result.getString("content");
+		} catch (Exception e) {
+			log.debug("Service response was not json formatted");
+		}
+		
+		throw new Exception("Unknown service response format");
 	}
 }

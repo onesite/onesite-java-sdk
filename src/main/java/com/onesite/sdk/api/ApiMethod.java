@@ -17,6 +17,8 @@ package com.onesite.sdk.api;
 
 import java.util.Map;
 
+import org.apache.thrift.TBase;
+import org.apache.thrift.TDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +26,7 @@ import com.onesite.commons.net.http.rest.client.HttpStatus;
 import com.onesite.sdk.client.OnesiteClient;
 import com.onesite.sdk.client.OnesiteException;
 import com.onesite.sdk.client.OnesiteResultCode;
+import com.onesite.sdk.thrift.api.Status;
 
 public class ApiMethod
 {
@@ -70,5 +73,43 @@ public class ApiMethod
 		}
 
 		throw new OnesiteException(this.client.getHttpStatusCode(), this.client.getHttpStatusMessage());
+	}
+
+	/**
+	 * Call the API via the OnesiteClient and populate the TBase obj. A OnesiteException
+	 * will be returned if an error occured during deserialization of the TBase obj
+	 * 
+	 * @param path
+	 * @param params
+	 * @param type
+	 * 
+	 * @throws Exception
+	 */
+	protected void get(String path, Map<String, String> params, TBase obj) throws Exception
+	{
+		try {
+			this.client.get(path, params);
+		} catch (Exception e) {
+			log.error("Error occurred during client call to " + path);
+			throw e;
+		}
+
+		if (this.client.getHttpStatusCode() == HttpStatus.SC_OK) {
+
+			try {
+				TDeserializer deserializer = new TDeserializer();
+				deserializer.fromString(obj, this.client.getHttpResult());
+				
+				Status status = (Status) obj.getFieldValue(obj.fieldForId(1));
+
+				if (status.getCode() != OnesiteResultCode.OK) {
+					throw new OnesiteException(status.getCode(), status.getMessage());
+				}
+			} catch (Exception e) {
+				throw new Exception("Error deserializing result ", e);
+			}
+		} else {
+			throw new OnesiteException(this.client.getHttpStatusCode(), this.client.getHttpStatusMessage());
+		}
 	}
 }

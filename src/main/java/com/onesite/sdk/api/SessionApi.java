@@ -23,10 +23,10 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.onesite.commons.util.json.JsonUtil;
-import com.onesite.sdk.client.OnesiteResultCode;
-import com.onesite.sdk.dao.Session;
-import com.onesite.sdk.dao.User;
+import com.onesite.sdk.thrift.api.ResponseSession;
+import com.onesite.sdk.thrift.api.ResponseString;
+import com.onesite.sdk.thrift.dao.Session;
+import com.onesite.sdk.thrift.dao.User;
 
 /**
  * ONESite API for the Session management designed to handle
@@ -57,28 +57,31 @@ public class SessionApi extends ApiMethod
 		params.put("ip", session.getIp());
 		params.put("agent", session.getAgent());
 		params.put("expires", Long.toString(session.getExpiresTime()));
-		
+
 		User user = session.getUser();
-		
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
-		} else if (!StringUtils.isEmpty(user.getUsername())) {
-			params.put("username", user.getUsername());
-		} else if (!StringUtils.isEmpty(user.getEmail())) {
-			params.put("email", user.getEmail());
+
+		if (user != null) {
+			if (user.getId() != 0) {
+				params.put("user_id", Long.toString(user.getId()));
+			} else if (!StringUtils.isEmpty(user.getUsername())) {
+				params.put("username", user.getUsername());
+			} else if (!StringUtils.isEmpty(user.getEmail())) {
+				params.put("email", user.getEmail());
+			} else {
+				params.put("anonymous", "1");
+			}
 		} else {
 			params.put("anonymous", "1");
 		}
 
-		if (!session.getSessionData().isEmpty()) {
+		if ((session.getSessionData() != null) && (!session.getSessionData().isEmpty())) {
 			params.put("session_data", session.getSessionData().toString());
 		}
 
 		try {
-			String result = this.get("/1/session/create.json", params);
-			session = (Session) JsonUtil.getMappedClassFromJson(result, "session", Session.class);
-			
-			return session;
+			ResponseSession response = new ResponseSession();
+			this.get("/1/session/create.thrift", params, response);
+			return response.getSession();
 		} catch (Exception e) {
 			log.error("Error creating session", e);
 			throw e;
@@ -100,8 +103,8 @@ public class SessionApi extends ApiMethod
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -115,10 +118,11 @@ public class SessionApi extends ApiMethod
 		params.put("expires", Long.toString(expiresFromNow));
 
 		try {
-			String result = this.get("/1/session/createCrossDomain.json", params);
+			ResponseString response = new ResponseString();
+			this.get("/1/session/createCrossDomain.thrift", params, response);
 
-			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("redirect_url", result))) {
-				return new URL(JsonUtil.getStringValueFromPath("redirect_url", result));
+			if (!StringUtils.isEmpty(response.getContent())) {
+				return new URL(response.getContent());
 			}
 		} catch (Exception e) {
 			log.error("Error creating cross domain session url", e);
@@ -133,19 +137,23 @@ public class SessionApi extends ApiMethod
 	 * 
 	 * @param user User to login (User id, username or email must be set)
 	 * @param password The users password
+	 * @param agent The browser agent
+	 * @param ip The users ip address
 	 * @param expiresFromNow Expiration time in seconds
 	 * 
 	 * @return Session created
 	 * @throws Exception
 	 */
-	public Session login(User user, String password, long expiresFromNow) throws Exception
+	public Session login(User user, String password, String agent, String ip, long expiresFromNow) throws Exception
 	{
 		Map<String, String> params = new HashMap<String, String>();
 
+		params.put("ip", ip);
+		params.put("agent", agent);
 		params.put("expires", Long.toString(expiresFromNow));
-		
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -161,9 +169,9 @@ public class SessionApi extends ApiMethod
 		}
 
 		try {
-			String result = this.get("/1/session/login.json", params);
-			Session session = (Session) JsonUtil.getMappedClassFromJson(result, "session", Session.class);
-			return session;
+			ResponseSession response = new ResponseSession();
+			this.get("/1/session/login.thrift", params, response);
+			return response.getSession();
 		} catch (Exception e) {
 			log.error("Error logging User in and creating new session", e);
 			throw e;
@@ -189,9 +197,9 @@ public class SessionApi extends ApiMethod
 		params.put("callback_url", callbackUrl);
 		params.put("ip", ip);
 		params.put("expires", Long.toString(expiresFromNow));
-		
-		if (user.getID() != 0) {
-			params.put("user_id", Long.toString(user.getID()));
+
+		if (user.getId() != 0) {
+			params.put("user_id", Long.toString(user.getId()));
 		} else if (!StringUtils.isEmpty(user.getUsername())) {
 			params.put("username", user.getUsername());
 		} else if (!StringUtils.isEmpty(user.getEmail())) {
@@ -207,10 +215,11 @@ public class SessionApi extends ApiMethod
 		}
 
 		try {
-			String result = this.get("/1/session/loginCrossDomain.json", params);
+			ResponseString response = new ResponseString();
+			this.get("/1/session/loginCrossDomain.thrift", params, response);
 
-			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("redirect_url", result))) {
-				return new URL(JsonUtil.getStringValueFromPath("redirect_url", result));
+			if (!StringUtils.isEmpty(response.getContent())) {
+				return new URL(response.getContent());
 			}
 		} catch (Exception e) {
 			log.error("Error createing redirect url for loginCrossDomain", e);
@@ -234,10 +243,10 @@ public class SessionApi extends ApiMethod
 
 		if (!StringUtils.isEmpty(session.getCoreU())) {
 			params.put("core_u", session.getCoreU());
-		}else if (!StringUtils.isEmpty(session.getAccessToken())){
+		} else if (!StringUtils.isEmpty(session.getAccessToken())) {
 			params.put("access_token", session.getCoreU());
-		} else if (session.getUser().getID() != 0) {
-			params.put("user_id", Long.toString(session.getUser().getID()));
+		} else if (session.getUser().getId() != 0) {
+			params.put("user_id", Long.toString(session.getUser().getId()));
 		} else if (!StringUtils.isEmpty(session.getUser().getUsername())) {
 			params.put("username", session.getUser().getUsername());
 		} else if (!StringUtils.isEmpty(session.getUser().getEmail())) {
@@ -247,17 +256,13 @@ public class SessionApi extends ApiMethod
 		}
 
 		try {
-			String result = this.get("/1/session/logout.json", params);
-
-			if (JsonUtil.getIntValueFromPath("code", result) == OnesiteResultCode.OK) {
-				return true;
-			}
+			ResponseString result = new ResponseString();
+			this.get("/1/session/logout.thrift", params, result);
+			return true;
 		} catch (Exception e) {
 			log.error("Error logging out session", e);
 			throw e;
 		}
-
-		return false;
 	}
 
 	/**
@@ -279,13 +284,14 @@ public class SessionApi extends ApiMethod
 			params.put("core_x", session.getCoreX());
 		}
 
-		params.put("ip", session.getIp());
-		params.put("agent", session.getAgent());
-
 		try {
-			String result = this.get("/1/session/check.json", params);
-			session = (Session) JsonUtil.getMappedClassFromJson(result, "session", Session.class);
-			return session;
+			params.put("ip", session.getIp());
+			params.put("agent", session.getAgent());
+
+			
+			ResponseSession response = new ResponseSession();
+			this.get("/1/session/check.thrift", params, response);
+			return response.getSession();
 		} catch (Exception e) {
 			log.error("Error checking session status", e);
 			throw e;
@@ -311,12 +317,13 @@ public class SessionApi extends ApiMethod
 		params.put("domain", domain);
 		params.put("ip", ip);
 		params.put("agent", agent);
-		
-		try {
-			String result = this.get("/1/session/joinCrossDomain.json", params);
 
-			if (!StringUtils.isEmpty(JsonUtil.getStringValueFromPath("redirect_url", result))) {
-				return new URL(JsonUtil.getStringValueFromPath("redirect_url", result));
+		try {
+			ResponseString response = new ResponseString();
+			this.get("/1/session/joinCrossDomain.thrift", params, response);
+			
+			if (!StringUtils.isEmpty(response.getContent())) {
+				return new URL(response.getContent());
 			}
 		} catch (Exception e) {
 			log.error("Error joining cross domain session", e);

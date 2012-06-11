@@ -1,5 +1,7 @@
 ## General
 .svn
+.cvs
+*.swp
 *~
 
 ## Java

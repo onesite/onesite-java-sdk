@@ -16,6 +16,8 @@
 package com.onesite.sdk.test.api;
 
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 import junit.framework.Assert;
 
@@ -23,10 +25,9 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 
 import com.onesite.sdk.api.SessionApi;
-import com.onesite.sdk.dao.Session;
-import com.onesite.sdk.dao.SessionData;
-import com.onesite.sdk.dao.User;
 import com.onesite.sdk.test.AbstractTestCase;
+import com.onesite.sdk.thrift.dao.Session;
+import com.onesite.sdk.thrift.dao.User;
 
 public class SessionApiTest extends AbstractTestCase
 {
@@ -43,7 +44,11 @@ public class SessionApiTest extends AbstractTestCase
 		SessionApi api = new SessionApi();
 
 		try {
-			Session session = api.create(new Session(ip, agent));
+			Session testSession = new Session();
+			testSession.setIp(ip);
+			testSession.setAgent(agent);
+			
+			Session session = api.create(testSession);
 
 			System.out.println("Anonymous Session");
 			System.out.println("coreU: " + session.getCoreU());
@@ -62,20 +67,27 @@ public class SessionApiTest extends AbstractTestCase
 		SessionApi api = new SessionApi();
 
 		try {
-			Session sess = new Session(new User(userID), ip, agent);
-
-			SessionData data = new SessionData();
+			User testUser = new User();
+			testUser.setId(userID);
+			
+			Session testSession = new Session();
+			testSession.setUser(testUser);
+			testSession.setIp(ip);
+			testSession.setAgent(agent);
+			
+			
+			Map<String, String> data = new HashMap<String, String>();
 			data.put("alpha", "abc");
 			data.put("numeric", "123");
 			data.put("other", "#$%.-");
-			sess.setSessionData(data);
+			testSession.setSessionData(data);
 
-			Session session = api.create(sess);
+			Session session = api.create(testSession);
 
 			System.out.println("Active Session");
 			System.out.println("coreU: " + session.getCoreU());
 			System.out.println("coreX: " + session.getCoreU());
-			System.out.println("Data:  " + session.getSessionData().size());
+			System.out.println("Data:  " + session.getSessionDataSize());
 			
 			Assert.assertFalse(StringUtils.isEmpty(session.getCoreU()));
 		} catch (Exception e) {
@@ -108,20 +120,27 @@ public class SessionApiTest extends AbstractTestCase
 	{
 		SessionApi api = new SessionApi();
 		try {
-			Session session = api.login(new User(userID), password, expiresFromNow);
+			User testUser = new User();
+			testUser.setId(userID);			
+			
+			Session session = api.login(testUser, password, agent, ip, expiresFromNow);
 			
 			System.out.println("Active Session");
 			System.out.println("coreU: " + session.getCoreU());
 			System.out.println("coreX: " + session.getCoreU());
-			System.out.println("Data:  " + session.getSessionData().size());
+			System.out.println("Data:  " + session.getSessionDataSize());
 			
+			System.out.println("Login Successful");
 			Assert.assertFalse(StringUtils.isEmpty(session.getCoreU()));
 			
+			System.out.println("Running session check against logged in coreU " + session.getCoreU());
 			session = api.check(session);
 			System.out.println("coreU: " + session.getCoreU());
 			System.out.println("coreX: " + session.getCoreU());
-			System.out.println("Data:  " + session.getSessionData().size());
-			System.out.println("User Status: " + session.getSessionData().get("STATUS"));
+			System.out.println("Data:  " + session.getSessionDataSize());
+			if (session.isSetSessionData()) {
+				System.out.println("User Status: " + session.getSessionData().get("STATUS"));
+			}
 			
 			Assert.assertFalse(StringUtils.isEmpty(session.getCoreU()));
 		} catch (Exception e) {
@@ -134,7 +153,10 @@ public class SessionApiTest extends AbstractTestCase
 	{
 		SessionApi api = new SessionApi();
 		try {
-			URL redirectUrl = api.loginCrossDomain(new User(userID), password, callbackUrl, ip, expiresFromNow);
+			User testUser = new User();
+			testUser.setId(userID);	
+			
+			URL redirectUrl = api.loginCrossDomain(testUser, password, callbackUrl, ip, expiresFromNow);
 			
 			System.out.println("Login Cross Domain Redirect Url");
 			System.out.println(redirectUrl.toString());
