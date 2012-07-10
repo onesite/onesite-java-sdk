@@ -71,7 +71,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                     <outputDirectory>${project.build.directory}/release/</outputDirectory>
                     <descriptors>
-					  <descriptor>${basedir}/src/main/resources/assembly/assembly.xml</descriptor>
+                        <descriptor>${basedir}/src/main/resources/assembly/assembly.xml</descriptor>
                     </descriptors>
                 </configuration>
                 <executions>
